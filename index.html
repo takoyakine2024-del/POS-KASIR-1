@@ -19,63 +19,64 @@
   <h2>Data Tersimpan</h2>
   <ul id="listData"></ul>
 
-  <script>
-    const firebaseConfig = {
-      apiKey: "AIzaSyDJnPZCbwssP3TLxdzG9FjhWLC4waUxz1A",
-      authDomain: "pos-takoyaki-1.firebaseapp.com",
-      databaseURL: "https://pos-takoyaki-1-default-rtdb.asia-southeast1.firebasedatabase.app",
-      projectId: "pos-takoyaki-1",
-      storageBucket: "pos-takoyaki-1.firebasestorage.app",
-      messagingSenderId: "283195447071",
-      appId: "1:283195447071:web:daf80b01d56085b17d822a",
-      measurementId: "G-7RZMR4KH4M"
-    };
+ <script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js";
+  import { getDatabase, ref, push, onValue, get } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-database.js";
 
-    const app = firebase.initializeApp(firebaseConfig);
-    const db = firebase.database();
+  const firebaseConfig = {
+    apiKey: "AIzaSyDJnPZCbwssP3TLxdzG9FjhWLC4waUxz1A",
+    authDomain: "pos-takoyaki-1.firebaseapp.com",
+    databaseURL: "https://pos-takoyaki-1-default-rtdb.asia-southeast1.firebasedatabase.app",
+    projectId: "pos-takoyaki-1",
+    storageBucket: "pos-takoyaki-1.firebasestorage.app",
+    messagingSenderId: "283195447071",
+    appId: "1:283195447071:web:daf80b01d56085b17d822a",
+    measurementId: "G-7RZMR4KH4M"
+  };
 
-    function simpanData() {
-      const nama = document.getElementById("nama").value;
-      const qty = document.getElementById("qty").value;
-      const tanggal = new Date().toISOString().split("T")[0]; // Format YYYY-MM-DD
-      db.ref("transaksi").push({ nama, qty, tanggal });
-    }
+  const app = initializeApp(firebaseConfig);
+  const db = getDatabase(app);
 
-    function tampilkanSemuaData() {
-      db.ref("transaksi").on("value", snapshot => {
-        const data = snapshot.val();
-        const list = document.getElementById("listData");
-        list.innerHTML = "";
-        for (let id in data) {
-          const item = data[id];
+  window.simpanData = function () {
+    const nama = document.getElementById("nama").value;
+    const qty = document.getElementById("qty").value;
+    const tanggal = new Date().toISOString().split("T")[0];
+    push(ref(db, "transaksi"), { nama, qty, tanggal });
+  };
+
+  window.filterData = function () {
+    const tanggalFilter = document.getElementById("filterTanggal").value;
+    const namaFilter = document.getElementById("filterNama").value.toLowerCase();
+
+    get(ref(db, "transaksi")).then(snapshot => {
+      const data = snapshot.val();
+      const list = document.getElementById("listData");
+      list.innerHTML = "";
+
+      for (let id in data) {
+        const item = data[id];
+        const cocokTanggal = !tanggalFilter || item.tanggal === tanggalFilter;
+        const cocokNama = !namaFilter || item.nama.toLowerCase().includes(namaFilter);
+
+        if (cocokTanggal && cocokNama) {
           list.innerHTML += `<li>${item.tanggal} - ${item.nama} - ${item.qty}</li>`;
         }
-      });
+      }
+    });
+  };
+
+  // Tampilkan semua data saat halaman dibuka
+  onValue(ref(db, "transaksi"), snapshot => {
+    const data = snapshot.val();
+    const list = document.getElementById("listData");
+    list.innerHTML = "";
+    for (let id in data) {
+      const item = data[id];
+      list.innerHTML += `<li>${item.tanggal} - ${item.nama} - ${item.qty}</li>`;
     }
+  });
+</script>
 
-    function filterData() {
-      const tanggalFilter = document.getElementById("filterTanggal").value;
-      const namaFilter = document.getElementById("filterNama").value.toLowerCase();
-
-      db.ref("transaksi").once("value", snapshot => {
-        const data = snapshot.val();
-        const list = document.getElementById("listData");
-        list.innerHTML = "";
-
-        for (let id in data) {
-          const item = data[id];
-          const cocokTanggal = !tanggalFilter || item.tanggal === tanggalFilter;
-          const cocokNama = !namaFilter || item.nama.toLowerCase().includes(namaFilter);
-
-          if (cocokTanggal && cocokNama) {
-            list.innerHTML += `<li>${item.tanggal} - ${item.nama} - ${item.qty}</li>`;
-          }
-        }
-      });
-    }
-
-    // Tampilkan semua data saat halaman dibuka
-    tampilkanSemuaData();
-  </script>
 </body>
 </html>
+
